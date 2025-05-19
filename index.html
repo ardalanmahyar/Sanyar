@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fa">
 <head>
@@ -57,7 +58,7 @@
   <label>نام محصول:</label>
   <input type="text" id="nameBuy" disabled><br>
   <label>تعداد:</label>
-  <input type="number" id="quantityBuy" value="1"><br>
+  <input type="number" id="quantityBuy" value=""><br>
   <button onclick="addToCart()">افزودن به لیست</button>
   <ul id="cartList"></ul>
   <p><strong>جمع کل:</strong> <span id="totalPrice">۰</span> هزار تومان</p>
@@ -96,13 +97,13 @@
   }
 
   function fillNameByQR() {
-    const qr = qrBuy.value.trim();
-    nameBuy.value = products[qr] ? products[qr].name : '';
+    const qr = document.getElementById('qrBuy').value.trim();
+    document.getElementById('nameBuy').value = products[qr]?.name || '';
   }
 
   function addToCart() {
-    const qr = qrBuy.value.trim();
-    const quantity = parseInt(quantityBuy.value);
+    const qr = document.getElementById('qrBuy').value.trim();
+    const quantity = parseInt(document.getElementById('quantityBuy').value);
     if (!products[qr] || isNaN(quantity)) return alert("اطلاعات نامعتبر است.");
     cart.push({ qr, quantity });
     updateCart();
@@ -110,21 +111,20 @@
 
   function updateCart() {
     let total = 0, profit = 0, totalBuy = 0;
-    cartList.innerHTML = '';
+    document.getElementById('cartList').innerHTML = '';
     cart.forEach(item => {
       const p = products[item.qr];
-      const line = document.createElement('li');
       const itemSell = Math.round((item.quantity * p.sell) / 1000);
+      const line = document.createElement('li');
       line.textContent = `${p.name} × ${item.quantity} = ${itemSell} هزار تومان`;
-      cartList.appendChild(line);
+      document.getElementById('cartList').appendChild(line);
       total += item.quantity * p.sell;
       profit += item.quantity * (p.sell - p.buy);
       totalBuy += item.quantity * p.buy;
     });
-    totalPrice.textContent = Math.round(total / 1000);
-    totalProfit.textContent = Math.round(profit / 1000);
-    totalBuy = Math.round(totalBuy / 1000);
-    document.querySelector('#totalBuy').textContent = totalBuy;
+    document.getElementById('totalPrice').textContent = Math.round(total / 1000);
+    document.getElementById('totalProfit').textContent = Math.round(profit / 1000);
+    document.getElementById('totalBuy').textContent = Math.round(totalBuy / 1000);
     localStorage.setItem('cart', JSON.stringify(cart));
   }
 
@@ -138,7 +138,7 @@
       { fps: 10, qrbox: 250 },
       qrCodeMessage => {
         document.getElementById(targetInputId).value = qrCodeMessage;
-        fillNameByQR();
+        if (targetInputId === 'qrBuy') fillNameByQR();
         stopScanner();
       },
       error => {}
