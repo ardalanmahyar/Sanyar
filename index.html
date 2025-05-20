@@ -72,108 +72,112 @@
 </section>
 
 <script>
-  let products = JSON.parse(localStorage.getItem("products") || '{}');
-  let cart = [];
+let products = JSON.parse(localStorage.getItem("products") || '{}');
+let cart = [];
 
-  function showSection(id) {
-    document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
-    document.querySelector("#" + id).classList.add("active");
-    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll("nav button").forEach(b => {
-      if (b.textContent.includes(id === 'register' ? 'ثبت' : id === 'buy' ? 'خرید' : 'گزارش')) b.classList.add("active");
-    });
-    stopScanner();
-  }
-
-  function addProduct() {
-    const qr = qrInput.value.trim();
-    const name = productName.value.trim();
-    const buy = parseInt(buyPrice.value);
-    const sell = parseInt(sellPrice.value);
-    if (!qr || !name || isNaN(buy) || isNaN(sell)) return alert("تمام فیلدها الزامی است.");
-    products[qr] = { name, buy, sell };
-    localStorage.setItem("products", JSON.stringify(products));
-    alert("محصول ثبت شد.");
-    qrInput.value = productName.value = buyPrice.value = sellPrice.value = '';
-  }
-
-  function fillNameByQR() {
-    const qr = document.getElementById('qrBuy').value.trim();
-    document.getElementById('nameBuy').value = products[qr]?.name || '';
-  }
-
-  function fillNameByQRInput() {
-    const qr = document.getElementById('qrInput').value.trim();
-    document.getElementById('productName').value = products[qr]?.name || '';
-  }
-
-  function addToCart() {
-    const qr = document.getElementById('qrBuy').value.trim();
-    const quantity = parseInt(document.getElementById('quantityBuy').value);
-    const p = products[qr];
-    if (!p || isNaN(quantity)) return alert("اطلاعات نامعتبر است.");
-    cart.push({ qr, quantity });
-    updateCart();
-  }
-
-  function updateCart() {
-    let total = 0, profit = 0, totalBuy = 0;
-    document.getElementById('cartList').innerHTML = '';
-    cart.forEach(item => {
-      const p = products[item.qr];
-      if (!p) return;
-      const itemSell = Math.round((item.quantity * p.sell) / 1000);
-      const line = document.createElement('li');
-      line.textContent = `${p.name} × ${item.quantity} = ${itemSell} هزار تومان`;
-      document.getElementById('cartList').appendChild(line);
-      total += item.quantity * p.sell;
-      profit += item.quantity * (p.sell - p.buy);
-      totalBuy += item.quantity * p.buy;
-    });
-    document.getElementById('totalPrice').textContent = Math.round(total / 1000);
-    document.getElementById('totalProfit').textContent = Math.round(profit / 1000);
-    document.getElementById('totalBuy').textContent = Math.round(totalBuy / 1000);
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }
-
-  function clearCart() {
-    cart = [];
-    localStorage.removeItem('cart');
-    updateCart();
-  }
-
-  let scanner = null;
-  function startScanner(targetInputId, readerId) {
-    stopScanner();
-    document.getElementById(readerId).style.display = "block";
-    scanner = new Html5Qrcode(readerId);
-    scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      qrCodeMessage => {
-        document.getElementById(targetInputId).value = qrCodeMessage;
-        if (targetInputId === 'qrBuy') fillNameByQR();
-        if (targetInputId === 'qrInput') fillNameByQRInput();
-        stopScanner();
-      },
-      error => {}
-    );
-  }
-
-  function stopScanner() {
-    if (scanner) {
-      scanner.stop().then(() => {
-        document.querySelectorAll(".reader").forEach(r => r.style.display = "none");
-        scanner.clear();
-        scanner = null;
-      }).catch(() => {});
-    }
-  }
-
-  window.addEventListener("load", () => {
-    cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    updateCart();
+function showSection(id) {
+  document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+  document.querySelector("#" + id).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(b => {
+    if (b.textContent.includes(id === 'register' ? 'ثبت' : id === 'buy' ? 'خرید' : 'گزارش')) b.classList.add("active");
   });
+  stopScanner();
+}
+
+function addProduct() {
+  const qr = qrInput.value.trim();
+  const name = productName.value.trim();
+  const buy = Number(buyPrice.value);
+  const sell = Number(sellPrice.value);
+  if (!qr || !name || isNaN(buy) || isNaN(sell)) return alert("تمام فیلدها الزامی است.");
+  products[qr] = { name, buy, sell };
+  localStorage.setItem("products", JSON.stringify(products));
+  alert("محصول ثبت شد.");
+  qrInput.value = productName.value = buyPrice.value = sellPrice.value = '';
+}
+
+function fillNameByQR() {
+  const qr = document.getElementById('qrBuy').value.trim();
+  document.getElementById('nameBuy').value = products[qr]?.name || '';
+}
+
+function fillNameByQRInput() {
+  const qr = document.getElementById('qrInput').value.trim();
+  document.getElementById('productName').value = products[qr]?.name || '';
+}
+
+function addToCart() {
+  const qr = document.getElementById('qrBuy').value.trim();
+  const quantity = Number(document.getElementById('quantityBuy').value);
+  const product = products[qr];
+  if (!product || isNaN(quantity)) return alert("محصول پیدا نشد یا تعداد نامعتبر است");
+  if (isNaN(product.sell)) {
+    alert("قیمت فروش برای این محصول ثبت نشده");
+    return;
+  }
+  cart.push({ qr, quantity });
+  updateCart();
+}
+
+function updateCart() {
+  let total = 0, profit = 0, totalBuy = 0;
+  document.getElementById('cartList').innerHTML = '';
+  cart.forEach(item => {
+    const p = products[item.qr];
+    if (!p) return;
+    const line = document.createElement('li');
+    const sum = item.quantity * p.sell;
+    line.textContent = `${p.name} × ${item.quantity} = ${Math.round(sum / 1000)} هزار تومان`;
+    document.getElementById('cartList').appendChild(line);
+    total += sum;
+    profit += item.quantity * (p.sell - p.buy);
+    totalBuy += item.quantity * p.buy;
+  });
+  document.getElementById('totalPrice').textContent = Math.round(total / 1000);
+  document.getElementById('totalProfit').textContent = Math.round(profit / 1000);
+  document.getElementById('totalBuy').textContent = Math.round(totalBuy / 1000);
+  localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+function clearCart() {
+  cart = [];
+  localStorage.removeItem('cart');
+  updateCart();
+}
+
+let scanner = null;
+function startScanner(targetInputId, readerId) {
+  stopScanner();
+  document.getElementById(readerId).style.display = "block";
+  scanner = new Html5Qrcode(readerId);
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    qrCodeMessage => {
+      document.getElementById(targetInputId).value = qrCodeMessage;
+      if (targetInputId === 'qrBuy') fillNameByQR();
+      if (targetInputId === 'qrInput') fillNameByQRInput();
+      stopScanner();
+    },
+    error => {}
+  );
+}
+
+function stopScanner() {
+  if (scanner) {
+    scanner.stop().then(() => {
+      document.querySelectorAll(".reader").forEach(r => r.style.display = "none");
+      scanner.clear();
+      scanner = null;
+    }).catch(() => {});
+  }
+}
+
+window.addEventListener("load", () => {
+  cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  updateCart();
+});
 </script>
 
 </body>
